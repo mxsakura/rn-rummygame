@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">rummygame</string>
+    <string moduleConfig="true" name="CodePushDeploymentKey">GJeYst4AmzoUCy0JsxKrj5aQknNK4ksvOXqog</string>
+</resources>
