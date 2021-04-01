@@ -1,12 +1,12 @@
 import React, {Component} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
+import {Adjust, AdjustConfig} from 'react-native-adjust';
 
 //
 import Update from './update';
 import HomeScreen from './src/views/HomeScreen';
 import DetailsScreen from './src/views/DetailsScreen';
-import {Adjust, AdjustConfig} from 'react-native-adjust';
 
 const Stack = createStackNavigator();
 
