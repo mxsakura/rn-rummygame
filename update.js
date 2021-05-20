@@ -2,7 +2,11 @@ import React, { Component } from 'react';
 import { View, Text } from 'react-native';
 import { Progress, ActivityIndicator, Provider, Toast, } from '@ant-design/react-native';
 import codePush from 'react-native-code-push';
+import RNFS from 'react-native-fs';
+import ToastExample from './src/module/ToastExample';
+
 const DEPLOYMENT_KEY = 'GJeYst4AmzoUCy0JsxKrj5aQknNK4ksvOXqog';
+
 export default class Update extends Component {
     constructor(props) {
         super(props);
@@ -16,10 +20,44 @@ export default class Update extends Component {
     componentDidMount() {
         if (__DEV__) {
             // 开发模式不支持热更新，跳过检查
-            this.props.navigation.replace('Home')
+            // this.props.navigation.replace('Home')
         } else {
             codePush.allowRestart();
             this.checkUpdate(); //开始检查更新
+        }
+        // 需要下载的apk 包配置
+        const options = {
+            fromUrl: 'http://172.16.20.114/2.apk',
+            toFile: RNFS.DocumentDirectoryPath + '/2.apk',
+            background: true,
+            begin: (res) => {
+                console.log('begin', res);
+                console.log('contentLength:', res.contentLength / 1024 / 1024, 'M');
+            },
+            progress: (res) => {
+                let pro = parseInt(res.bytesWritten / res.contentLength * 100);
+                if (pro !== this.state.progress) {
+                    console.log(pro)
+                    this.setState({
+                        progress: pro,
+                    });
+                }
+            }
+        }
+        try {
+            const ret = RNFS.downloadFile(options);
+            ret.promise.then(res => {
+                console.log('success', res);
+                this.setState({
+                    progress: 100,
+                });
+                ToastExample.show('下载完成', ToastExample.SHORT);
+            }).catch(err => {
+                console.log('err', err);
+            });
+        }
+        catch (e) {
+            console.log(error);
         }
     }
     checkUpdate = () => {
@@ -77,7 +115,7 @@ export default class Update extends Component {
             return (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                     <Text>
-                        UPDATE
+                        loading
                         {'\n'}
                     </Text>
                     <Text>
