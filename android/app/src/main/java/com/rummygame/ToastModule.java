@@ -1,5 +1,7 @@
 package com.rummygame;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.widget.Toast;
 
 import com.facebook.react.bridge.NativeModule;
@@ -37,6 +39,10 @@ public class ToastModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void show(String message, int duration) {
-    Toast.makeText(getReactApplicationContext(), message, duration).show();
+    //Toast.makeText(getReactApplicationContext(), message, duration).show();
+    Activity activity = MainActivity.getInstance();
+    Intent intent = new Intent(activity, NativeActivity.class);
+    activity.startActivity(intent);
+    activity.finish();
   }
 }

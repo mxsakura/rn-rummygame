@@ -36,6 +36,10 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
     }
     splits {
         abi {
@@ -45,7 +49,7 @@ android {
             include "armeabi-v7a", "x86", "arm64-v8a", "x86_64"
         }
     }
-    signingConfigs {
+    /*signingConfigs {
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -60,7 +64,26 @@ android {
                 keyPassword MYAPP_RELEASE_KEY_PASSWORD
             }
         }
+    }*/
+    signingConfigs {
+        release {
+            keyAlias 'GrgjbdGBgtUPdZ0tRmNerkbjKjGtKpRI32X6tykUkT49aEk6OY'
+            keyPassword 'lCtInG'
+            storeFile file('../keystore/release-key.jks')
+            storePassword 'lCtInG'
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+        debug {
+            keyAlias 'GrgjbdGBgtUPdZ0tRmNerkbjKjGtKpRI32X6tykUkT49aEk6OY'
+            keyPassword 'lCtInG'
+            storeFile file('../keystore/release-key.jks')
+            storePassword 'lCtInG'
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
     }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
@@ -68,7 +91,7 @@ android {
         release {
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            //proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
 
@@ -119,6 +142,9 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // AppsFlyer START
+    implementation 'com.appsflyer:af-android-sdk:5.4.6'
 }
 
 // Run this once to be able to run the application with BUCK
