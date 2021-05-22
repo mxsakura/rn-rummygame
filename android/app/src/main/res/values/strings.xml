@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">rummygame</string>
+    <string name="app_name">Rummy Center</string>
     <string moduleConfig="true" name="CodePushDeploymentKey">GJeYst4AmzoUCy0JsxKrj5aQknNK4ksvOXqog</string>
     <string moduleConfig="true" name="CodePushServerUrl">http://172.16.20.114:3000</string>
 </resources>
