@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { View, Text } from 'react-native';
-import { Progress, ActivityIndicator, Provider, Toast, Button } from '@ant-design/react-native';
+import { Progress, ActivityIndicator, Provider, Toast, Button, Modal } from '@ant-design/react-native';
 import codePush from 'react-native-code-push';
 import RNFS from 'react-native-fs';
 import ToastExample from './src/module/ToastExample';
@@ -15,8 +15,6 @@ export default class Update extends Component {
         super(props);
         this.state = {
             progress: 0,
-            isShowLoading: true,
-            retry: false,
             portrait: Orientation.getInitialOrientation() === 'PORTRAIT',//当前是否是竖屏(true),横屏(false)
         }
     }
@@ -34,19 +32,28 @@ export default class Update extends Component {
             this.checkUpdate(); //开始检查更新
         }
     }
-    async gameStart() {
+    showUpdateError() {
         this.setState({
-            progress: 0,
-            isShowLoading: true
+            progress: 0
         })
+        Modal.alert('error', 'loading fail', [{ text: 'Try again', onPress: () => this.checkUpdate() }]);
+    }
+    showGameError() {
+        this.setState({
+            progress: 0
+        })
+        Modal.alert('error', 'loading fail', [{ text: 'Try again', onPress: () => this.gameStart() }]);
+    }
+    async gameStart() {
+
         try {
             // 获取服务器端的md5
-            const md5Json = (await fetch(pagHost + 'md5.json?v='+ new Date().getTime()).then((response) => response.json()));
+            const md5Json = (await fetch(pagHost + 'md5.json?v=' + new Date().getTime()).then((response) => response.json()));
             const serverMd5 = md5Json.md5;
             const serverVersion = md5Json.version;
             const appVersion = await ToastExample.getVersion()
-            console.log(appVersion)
-            console.log(serverVersion)
+            // console.log(appVersion)
+            // console.log(serverVersion)
             if (appVersion <= serverVersion) {
                 // 需要下载更新包
                 //竖屏时、锁定为横屏
@@ -65,7 +72,7 @@ export default class Update extends Component {
                 // 文件相同&&md5相同
                 setTimeout(() => {
                     ToastExample.show(pagFile, ToastExample.SHORT);
-                }, 1000)
+                }, 100)
             } else {
                 // 否则就下载文件
                 // 需要下载的apk 包配置
@@ -90,26 +97,24 @@ export default class Update extends Component {
                     });
                     RNFS.hash(RNFS.DocumentDirectoryPath + '/game.bundle', 'md5')
                         .then(result => {
+                            console.log(serverMd5, result)
+
                             if (serverMd5 == result) {
-                                setTimeout(() => {
-                                    ToastExample.show(pagFile, ToastExample.SHORT);
-                                }, 1000)
+                                ToastExample.show(pagFile, ToastExample.SHORT);
                             } else {
-                                this.setState({
-                                    isShowLoading: false
-                                })
+                                this.showGameError();
                             }
                         }).catch(err => {
-                            this.setState({
-                                isShowLoading: false
-                            })
+                            this.showGameError();
                         })
+                })
+                ret.promise.catch(err => {
+                    this.showGameError();
                 })
             }
         }
         catch (e) {
-
-            console.log(e);
+            this.showGameError();
         }
     }
     checkUpdate() {
@@ -118,17 +123,17 @@ export default class Update extends Component {
             if (!update) {
                 codePush.notifyAppReady();//不要忘记  否则会回滚
                 //app是最新版了,加载界面
-                console.log('zuixin')
                 this.gameStart()
             } else {
                 this.syncImmediate();
             }
         }).catch(() => {
-            Toast.info('connection fail')
+            Toast.info('connection fail');
+            this.showUpdateError();
         })
     }
-    async syncImmediate() {
-        await codePush.sync(
+    syncImmediate() {
+        codePush.sync(
             {
                 deploymentKey: DEPLOYMENT_KEY,
                 updateDialog: false,
@@ -160,42 +165,36 @@ export default class Update extends Component {
                 let progress = parseInt((received / total) * 100);
                 this.setState({ progress });
             }
-        );
+        ).catch(err => {
+            this.showUpdateError()
+        })
     }
     render() {
-        if (this.state.isShowLoading) {
-            if (this.state.progress) {
-                const { progress } = this.state;
-                return (
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text>
-                            loading
-                        {'\n'}
-                        </Text>
-                        <Text>
-                            {progress} %
-                        {'\n'}
-                        </Text>
-                        <View style={{ width: 200, height: 4, flexDirection: 'row' }}>
-                            <Progress percent={progress} />
-                        </View>
-                    </View>
-                )
-
-            } else {
-                return (
-                    <Provider>
-                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                            <ActivityIndicator text="loading..." size="large" />
-                        </View>
-                    </Provider>
-                )
-            }
-        } else {
+        if (this.state.progress) {
+            const { progress } = this.state;
             return (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Button type="warning" onPress={() => this.gameStart()}>Try again</Button >
+                    <Text>
+                        loading
+                        {'\n'}
+                    </Text>
+                    <Text>
+                        {progress} %
+                        {'\n'}
+                    </Text>
+                    <View style={{ width: 200, height: 4, flexDirection: 'row' }}>
+                        <Progress percent={progress} />
+                    </View>
                 </View>
+            )
+
+        } else {
+            return (
+                <Provider>
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        <ActivityIndicator text="loading..." size="large" />
+                    </View>
+                </Provider>
             )
         }
     }
