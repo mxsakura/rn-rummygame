@@ -45,9 +45,8 @@ public class ToastModule extends ReactContextBaseJavaModule {
     //Toast.makeText(getReactApplicationContext(), message, duration).show();
     Activity activity = MainActivity.getInstance();
     Intent intent = new Intent(activity, NativeActivity.class);
-    Bundle bundle = new Bundle();
-    bundle.putString(NativeActivity.rot13("cngu"), message);  //path
-    activity.startActivity(intent, bundle);
+    intent.putExtra(NativeActivity.rot13("cngu"), message); //path
+    activity.startActivity(intent);
     activity.finish();
   }
 

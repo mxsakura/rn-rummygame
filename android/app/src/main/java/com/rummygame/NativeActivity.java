@@ -23,9 +23,8 @@ public class NativeActivity extends Activity implements IGame {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        bundlePath = getIntent().getStringExtra(rot13("cngu")); //path
         load();
-
-        bundlePath = savedInstanceState.getString(rot13("cngu"));   //path
 
         Bundle bundle = new Bundle();
         bundle.putString(rot13("yvo"), libPath);   //lib
