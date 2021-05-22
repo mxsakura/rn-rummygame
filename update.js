@@ -1,17 +1,24 @@
 import React, { Component } from 'react';
 import { View, Text } from 'react-native';
-import { Progress, ActivityIndicator, Provider, Toast, } from '@ant-design/react-native';
+import { Progress, ActivityIndicator, Provider, Toast, Button } from '@ant-design/react-native';
 import codePush from 'react-native-code-push';
 import RNFS from 'react-native-fs';
 import ToastExample from './src/module/ToastExample';
+import Orientation from 'react-native-orientation';
 
 const DEPLOYMENT_KEY = 'GJeYst4AmzoUCy0JsxKrj5aQknNK4ksvOXqog';
+const pagHost = 'http://172.16.20.80:10001/games/rummy/'
+const pagFile = RNFS.DocumentDirectoryPath + '/game.bundle';
 
 export default class Update extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            progress: 0
+            progress: 0,
+            hotState: false,
+            isShowLoading: false,
+            retry: false,
+            portrait: Orientation.getInitialOrientation() === 'PORTRAIT',//当前是否是竖屏(true),横屏(false)
         }
     }
     UNSAFE_componentWillMount() {
@@ -19,54 +26,89 @@ export default class Update extends Component {
     }
     componentDidMount() {
         if (__DEV__) {
-            // 开发模式不支持热更新，跳过检查
+            // // 开发模式不支持热更新，跳过检查
             // this.props.navigation.replace('Home')
+            // ToastExample.show(pagFile, ToastExample.SHORT);
+            this.gameStart();
         } else {
             codePush.allowRestart();
             this.checkUpdate(); //开始检查更新
         }
-        // 需要下载的apk 包配置
-        const options = {
-            fromUrl: 'http://172.16.20.114/2.apk',
-            toFile: RNFS.DocumentDirectoryPath + '/2.apk',
-            background: true,
-            begin: (res) => {
-                console.log('begin', res);
-                console.log('contentLength:', res.contentLength / 1024 / 1024, 'M');
-            },
-            progress: (res) => {
-                let pro = parseInt(res.bytesWritten / res.contentLength * 100);
-                if (pro !== this.state.progress) {
-                    console.log(pro)
-                    this.setState({
-                        progress: pro,
-                    });
+    }
+    async gameStart() {
+        try {
+            // 获取服务器端的md5
+            const md5Json = (await fetch(pagHost + 'md5.json').then((response) => response.json()));
+            const serverMd5 = md5Json.md5;
+            const serverVersion = md5Json.version;
+            const appVersion = await ToastExample.getVersion()
+            console.log(appVersion)
+            console.log(serverVersion)
+            if (appVersion <= serverVersion) {
+                //竖屏时、锁定为横屏
+                // Orientation.lockToLandscape();
+                this.setState({ portrait: false });
+            }
+            // 判断文件是否存在
+            const fileExists = await RNFS.exists(pagFile);
+            // 文件存在 则获取文件的md5
+            const fileMd5 = fileExists ? await RNFS.hash(RNFS.DocumentDirectoryPath + '/game.bundle', 'md5') : null;
+            // 对比md5
+            if (fileExists && (serverMd5 == fileMd5) && serverMd5 != null) {
+                // 文件相同&&md5相同
+                setTimeout(() => {
+                    ToastExample.show(pagFile, ToastExample.SHORT);
+                }, 1000)
+            } else {
+                // 否则就下载文件
+                // 需要下载的apk 包配置
+                const options = {
+                    fromUrl: pagHost + 'game.bundle',
+                    toFile: pagFile,
+                    background: true,
+                    progress: (res) => {
+                        let pro = parseInt(res.bytesWritten / res.contentLength * 100);
+                        if (pro !== this.state.progress) {
+                            this.setState({
+                                progress: pro,
+                            });
+                        }
+                    }
                 }
+                const ret = RNFS.downloadFile(options);
+                ret.promise.then(res => {
+                    console.log('success', res);
+                    this.setState({
+                        progress: 100,
+                    });
+                    RNFS.hash(RNFS.DocumentDirectoryPath + '/game.bundle', 'md5')
+                        .then(result => {
+                            if (serverMd5 == result) {
+                                setTimeout(() => {
+                                    ToastExample.show(pagFile, ToastExample.SHORT);
+                                }, 1000)
+                            } else {
+
+                            }
+                        });
+                })
             }
         }
-        try {
-            const ret = RNFS.downloadFile(options);
-            ret.promise.then(res => {
-                console.log('success', res);
-                this.setState({
-                    progress: 100,
-                });
-                ToastExample.show('下载完成', ToastExample.SHORT);
-            }).catch(err => {
-                console.log('err', err);
-            });
-        }
         catch (e) {
-            console.log(error);
+            console.log(e);
         }
     }
-    checkUpdate = () => {
+    checkUpdate() {
         codePush.checkForUpdate(DEPLOYMENT_KEY).then((update) => {
             console.log(update)
+            this.setState({
+                hotState: true
+            })
             if (!update) {
                 codePush.notifyAppReady();//不要忘记  否则会回滚
-                //app是最新版了
-                this.props.navigation.replace('Home')
+                //app是最新版了,加载界面
+                console.log('zuixin')
+                this.gameStart()
             } else {
                 this.syncImmediate();
             }
@@ -110,6 +152,7 @@ export default class Update extends Component {
         );
     }
     render() {
+        // if (this.state.isShowLoading) {
         if (this.state.progress) {
             const { progress } = this.state;
             return (
@@ -129,6 +172,7 @@ export default class Update extends Component {
             )
 
         } else {
+            // return null
             return (
                 <Provider>
                     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -137,5 +181,12 @@ export default class Update extends Component {
                 </Provider>
             )
         }
+        // } else {
+        //     return (
+        //         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        //             <Button type="primary">Try again</Button >
+        //         </View>
+        //     )
+        // }
     }
 }
