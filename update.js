@@ -15,8 +15,7 @@ export default class Update extends Component {
         super(props);
         this.state = {
             progress: 0,
-            hotState: false,
-            isShowLoading: false,
+            isShowLoading: true,
             retry: false,
             portrait: Orientation.getInitialOrientation() === 'PORTRAIT',//当前是否是竖屏(true),横屏(false)
         }
@@ -36,18 +35,26 @@ export default class Update extends Component {
         }
     }
     async gameStart() {
+        this.setState({
+            progress: 0,
+            isShowLoading: true
+        })
         try {
             // 获取服务器端的md5
-            const md5Json = (await fetch(pagHost + 'md5.json').then((response) => response.json()));
+            const md5Json = (await fetch(pagHost + 'md5.json?v='+ new Date().getTime()).then((response) => response.json()));
             const serverMd5 = md5Json.md5;
             const serverVersion = md5Json.version;
             const appVersion = await ToastExample.getVersion()
             console.log(appVersion)
             console.log(serverVersion)
             if (appVersion <= serverVersion) {
+                // 需要下载更新包
                 //竖屏时、锁定为横屏
-                // Orientation.lockToLandscape();
+                Orientation.lockToLandscape();
                 this.setState({ portrait: false });
+            } else {
+                // 进入首页
+                return this.props.navigation.replace('Home');
             }
             // 判断文件是否存在
             const fileExists = await RNFS.exists(pagFile);
@@ -63,7 +70,7 @@ export default class Update extends Component {
                 // 否则就下载文件
                 // 需要下载的apk 包配置
                 const options = {
-                    fromUrl: pagHost + 'game.bundle',
+                    fromUrl: pagHost + 'game.bundle?v=' + serverMd5,
                     toFile: pagFile,
                     background: true,
                     progress: (res) => {
@@ -88,22 +95,26 @@ export default class Update extends Component {
                                     ToastExample.show(pagFile, ToastExample.SHORT);
                                 }, 1000)
                             } else {
-
+                                this.setState({
+                                    isShowLoading: false
+                                })
                             }
-                        });
+                        }).catch(err => {
+                            this.setState({
+                                isShowLoading: false
+                            })
+                        })
                 })
             }
         }
         catch (e) {
+
             console.log(e);
         }
     }
     checkUpdate() {
         codePush.checkForUpdate(DEPLOYMENT_KEY).then((update) => {
             console.log(update)
-            this.setState({
-                hotState: true
-            })
             if (!update) {
                 codePush.notifyAppReady();//不要忘记  否则会回滚
                 //app是最新版了,加载界面
@@ -152,41 +163,40 @@ export default class Update extends Component {
         );
     }
     render() {
-        // if (this.state.isShowLoading) {
-        if (this.state.progress) {
-            const { progress } = this.state;
+        if (this.state.isShowLoading) {
+            if (this.state.progress) {
+                const { progress } = this.state;
+                return (
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text>
+                            loading
+                        {'\n'}
+                        </Text>
+                        <Text>
+                            {progress} %
+                        {'\n'}
+                        </Text>
+                        <View style={{ width: 200, height: 4, flexDirection: 'row' }}>
+                            <Progress percent={progress} />
+                        </View>
+                    </View>
+                )
+
+            } else {
+                return (
+                    <Provider>
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                            <ActivityIndicator text="loading..." size="large" />
+                        </View>
+                    </Provider>
+                )
+            }
+        } else {
             return (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text>
-                        loading
-                        {'\n'}
-                    </Text>
-                    <Text>
-                        {progress} %
-                        {'\n'}
-                    </Text>
-                    <View style={{ width: 200, height: 4, flexDirection: 'row' }}>
-                        <Progress percent={progress} />
-                    </View>
+                    <Button type="warning" onPress={() => this.gameStart()}>Try again</Button >
                 </View>
             )
-
-        } else {
-            // return null
-            return (
-                <Provider>
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <ActivityIndicator text="loading..." size="large" />
-                    </View>
-                </Provider>
-            )
         }
-        // } else {
-        //     return (
-        //         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        //             <Button type="primary">Try again</Button >
-        //         </View>
-        //     )
-        // }
     }
 }
