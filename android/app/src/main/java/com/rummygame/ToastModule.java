@@ -11,6 +11,7 @@ import android.widget.Toast;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.Callback;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,17 +52,15 @@ public class ToastModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public int getVersion() {
+  public void getVersion(Callback callback) {
     try {
       Context context = MainActivity.getInstance();
       PackageManager pm = context.getPackageManager();
       PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
       int code = pi.versionCode;
-      return code;
+      callback.invoke(code);
     } catch (PackageManager.NameNotFoundException e) {
       e.printStackTrace();
     }
-
-    return 0;
   }
 }
