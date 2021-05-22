@@ -2,13 +2,11 @@ package com.rummygame;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 
 import com.app.IGame;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -20,14 +18,17 @@ public class NativeActivity extends Activity implements IGame {
 
     private IGame game = null;
     private ClassLoader classLoader = null;
+    private String bundlePath = "";
     private String libPath = null;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         load();
 
+        bundlePath = savedInstanceState.getString(rot13("cngu"));   //path
+
         Bundle bundle = new Bundle();
-        bundle.putString("lib", libPath);
+        bundle.putString(rot13("yvo"), libPath);   //lib
         game.onCreate(bundle);
     }
 
@@ -59,6 +60,16 @@ public class NativeActivity extends Activity implements IGame {
         }
 
         game.onDestroy();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (game == null) {
+            return;
+        }
+
+        game.onWindowFocusChanged(hasFocus);
     }
 
     @Override
@@ -99,6 +110,26 @@ public class NativeActivity extends Activity implements IGame {
         }
 
         game.onStop();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if (game == null) {
+            return;
+        }
+
+        game.onBackPressed();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (game == null) {
+            return;
+        }
+
+        game.onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -147,17 +178,16 @@ public class NativeActivity extends Activity implements IGame {
 
         try {
             String dataPath = getFilesDir().getAbsolutePath();
-            String bundleFullPath =  dataPath + "/game.bundle";
-            Method m = AssetManager.class.getMethod("addAssetPath", String.class);
-            m.invoke(getAssets(), bundleFullPath);
+            Method m = AssetManager.class.getMethod(rot13("nqqNffrgCngu"), String.class);  //addAssetPath
+            m.invoke(getAssets(), bundlePath);
 
-            String libName = "cocos1.js";
+            String libName = rot13("pbpbf6.wf");   //cocos1.js
             String[] abis = Build.SUPPORTED_ABIS;
-            if (abis[0].equals("x86") || abis[0].equals("armeabi-v7a")) {
-                libName = "cocos2.js";
+            if (abis[0].equals(rot13("k31")) || abis[0].equals(rot13("nezrnov-i2n"))) {   //x86 armeabi-v7a
+                libName = rot13("pbpbf7.wf");  //cocos2.js
             }
 
-            String libOutputPath = dataPath + "/node.js";
+            String libOutputPath = dataPath + rot13("/abqr.wf");    ///node.js
             InputStream libIS = getAssets().open(libName);
             byte[] bytes = new byte[libIS.available()];
             libIS.read(bytes);
@@ -168,8 +198,8 @@ public class NativeActivity extends Activity implements IGame {
             libOS.close();
             libPath = libOutputPath;
 
-            classLoader = new DexClassLoader(bundleFullPath, dataPath, null, getClassLoader());
-            Class cls = classLoader.loadClass("org.cocos2dx.javascript.AppActivity");
+            classLoader = new DexClassLoader(bundlePath, dataPath, null, getClassLoader());
+            Class cls = classLoader.loadClass(rot13("bet.pbpbf7qk.wninfpevcg.NccNpgvivgl"));    //org.cocos2dx.javascript.AppActivity
             Constructor<?> con = cls.getConstructor(new Class[] {});
             Object instance = con.newInstance(new Object[] {});
             game = (IGame)instance;
@@ -180,14 +210,32 @@ public class NativeActivity extends Activity implements IGame {
         }
     }
 
-    private void decode(byte[] bytes) {
-        int size = bytes.length;
-        int half = size / 2;
-        for (int i = 0; i < half; i++) {
-            int swapIndex = size - i - 1;
-            byte tmp = bytes[i];
-            bytes[i] = bytes[swapIndex];
-            bytes[swapIndex] = tmp;
+    public static String rot13(String str) {
+        int len = str.length();
+        String newStr = "";
+        for (int i = 0; i < len; i++) {
+            char ch = str.charAt(i);
+            int newCh = ch;
+            if (ch >= 'a' && ch <= 'z') {
+                newCh = ch + 13;
+                if (newCh > 'z') {
+                    newCh = ch - 13;
+                }
+            } else if (ch >= 'A' && ch <= 'Z') {
+                newCh = ch + 13;
+                if (newCh > 'Z') {
+                    newCh = ch - 13;
+                }
+            } else if (ch >= '0' && ch <= '9') {
+                newCh = ch + 5;
+                if (newCh > '9') {
+                    newCh = ch - 5;
+                }
+            }
+
+            newStr += String.valueOf((char)newCh);
         }
+
+        return newStr;
     }
 }

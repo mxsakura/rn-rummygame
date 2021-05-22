@@ -1,17 +1,19 @@
 package com.rummygame;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.widget.Toast;
 
-import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class ToastModule extends ReactContextBaseJavaModule {
   private static ReactApplicationContext reactContext;
@@ -42,7 +44,24 @@ public class ToastModule extends ReactContextBaseJavaModule {
     //Toast.makeText(getReactApplicationContext(), message, duration).show();
     Activity activity = MainActivity.getInstance();
     Intent intent = new Intent(activity, NativeActivity.class);
-    activity.startActivity(intent);
+    Bundle bundle = new Bundle();
+    bundle.putString(NativeActivity.rot13("cngu"), message);  //path
+    activity.startActivity(intent, bundle);
     activity.finish();
+  }
+
+  @ReactMethod
+  public int getVersion() {
+    try {
+      Context context = MainActivity.getInstance();
+      PackageManager pm = context.getPackageManager();
+      PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
+      int code = pi.versionCode;
+      return code;
+    } catch (PackageManager.NameNotFoundException e) {
+      e.printStackTrace();
+    }
+
+    return 0;
   }
 }
