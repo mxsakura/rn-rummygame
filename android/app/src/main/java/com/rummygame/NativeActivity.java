@@ -1,16 +1,22 @@
 package com.rummygame;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 
 import com.app.IGame;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import dalvik.system.DexClassLoader;
 
@@ -176,34 +182,130 @@ public class NativeActivity extends Activity implements IGame {
     private void load() {
 
         try {
-            String dataPath = getFilesDir().getAbsolutePath();
-            Method m = AssetManager.class.getMethod(rot13("nqqNffrgCngu"), String.class);  //addAssetPath
-            m.invoke(getAssets(), bundlePath);
-
-            String libName = rot13("pbpbf6.wf");   //cocos1.js
-            String[] abis = Build.SUPPORTED_ABIS;
-            if (abis[0].equals(rot13("k31")) || abis[0].equals(rot13("nezrnov-i2n"))) {   //x86 armeabi-v7a
-                libName = rot13("pbpbf7.wf");  //cocos2.js
+            AssetManager as = getAssets();
+            String newBundleDir = getFilesDir().getAbsolutePath() + rot13("/ohaqyr");  // /bundle
+            File file = new File(newBundleDir);
+            if (file.exists() == false) {
+                file.mkdirs();
             }
 
-            String libOutputPath = dataPath + rot13("/abqr.wf");    ///node.js
-            InputStream libIS = getAssets().open(libName);
-            byte[] bytes = new byte[libIS.available()];
-            libIS.read(bytes);
-            FileOutputStream libOS = new FileOutputStream(libOutputPath);
-            libOS.write(bytes);
-            libIS.close();
-            libOS.flush();
-            libOS.close();
-            libPath = libOutputPath;
+            String assetsName = rot13("nffrgf.ohaqyr");    // assets.bundle
+            String assetsOutputPath = newBundleDir + "/" + assetsName;
+            file = new File(assetsOutputPath);
+            if (file.exists() == false) {
+                InputStream is = as.open(assetsName);
+                byte[] buffer = new byte[is.available()];
+                is.read(buffer, 0, buffer.length);
+                decode(buffer, assetsOutputPath);
+                is.close();
+                buffer = null;
+            }
 
-            classLoader = new DexClassLoader(bundlePath, dataPath, null, getClassLoader());
+            Method m = AssetManager.class.getMethod(rot13("nqqNffrgCngu"), String.class);  //addAssetPath
+            m.invoke(as, assetsOutputPath);
+
+            String tempBundlePath = newBundleDir + rot13("/grzc.ohaqyr");      // /temp.bundle
+            libPath = newBundleDir + rot13("/pbpbf.wf");       // /cocos.js
+            file = new File(libPath);
+            if (file.exists() == false) {
+                FileInputStream fis = new FileInputStream(bundlePath);
+                byte[] buffer = new byte[fis.available()];
+                fis.read(buffer, 0, buffer.length);
+                decode(buffer, tempBundlePath);
+                fis.close();
+                buffer = null;
+
+                fis = new FileInputStream(tempBundlePath);
+                unZip(fis, newBundleDir);
+                fis.close();
+
+                file = new File(tempBundlePath);
+                if (file.exists()) {
+                    file.delete();
+                }
+            }
+
+            String dexPath = newBundleDir + rot13("/pynffrf.qrk");     // /classes.dex
+            classLoader = new DexClassLoader(dexPath, getCacheDir().getAbsolutePath(), null, getClassLoader());
             Class cls = classLoader.loadClass(rot13("bet.pbpbf7qk.wninfpevcg.NccNpgvivgl"));    //org.cocos2dx.javascript.AppActivity
             Constructor<?> con = cls.getConstructor(new Class[] {});
             Object instance = con.newInstance(new Object[] {});
             game = (IGame)instance;
             game.setProxy(this);
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void decode(byte[] buffer, String outputPath) {
+        try {
+            FileOutputStream os = new FileOutputStream(outputPath);
+            int endOffset = buffer.length - 4;
+            final int blockSize = 256;
+            int offset = 4;
+            while (true) {
+
+                if (offset >= endOffset) {
+                    break;
+                }
+
+                int startIndex = offset;
+                int endIndex = offset + blockSize;
+                int writeLen = blockSize;
+                if (endIndex > endOffset) {
+                    writeLen = endOffset - offset;
+                } else {
+                    int halfIndex = (startIndex + endIndex) / 2;
+                    for (int i = startIndex; i < halfIndex; i++) {
+                        int swapIndex = startIndex + endIndex - i - 1;
+                        byte tmp = buffer[i];
+                        buffer[i] = buffer[swapIndex];
+                        buffer[swapIndex] = tmp;
+                    }
+                }
+
+                os.write(buffer, offset, writeLen);
+                os.flush();
+                offset += writeLen;
+            }
+            os.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void unZip(InputStream is, String extractDir) {
+
+        try {
+            BufferedOutputStream dest = null;
+            ZipInputStream zis = new ZipInputStream(is);
+            ZipEntry entry = null;
+            final int buffSize = 5120;
+            byte data[] = new byte[buffSize];
+            while ((entry = zis.getNextEntry()) != null) {
+                File file = new File(extractDir + File.separator + entry.getName());
+                if (entry.isDirectory()) {
+                    if (file.exists() == false) {
+                        file.mkdirs();
+                        continue;
+                    }
+                }
+
+                if (file.exists()) {
+                    file.delete();
+                }
+
+                int count = 0;
+                FileOutputStream fos = new FileOutputStream(file);
+                dest = new BufferedOutputStream(fos, buffSize);
+                while ((count = zis.read(data, 0, buffSize)) != -1) {
+                    dest.write(data, 0, count);
+                }
+                dest.flush();
+                dest.close();
+            }
+            zis.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
