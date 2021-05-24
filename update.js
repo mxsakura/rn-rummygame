@@ -8,7 +8,7 @@ import Orientation from 'react-native-orientation';
 
 const DEPLOYMENT_KEY = 'illIXQlJYBWmqVXI5sYLONTkSOpl4ksvOXqog';
 // const packageHost = 'https://s.0nymzl6.com/update/'
-const packageHost = 'http://172.16.20.80:10001/games/rummy/bundles/'
+const packageHost = 'http://172.16.20.80:10001/games/rummy/bundles/';
 const packageFile = RNFS.DocumentDirectoryPath + '/game.bundle';
 
 export default class Update extends Component {
@@ -27,8 +27,8 @@ export default class Update extends Component {
         if (__DEV__) {
             // // 开发模式不支持热更新，跳过检查
             // this.props.navigation.replace('Home')
-            // this.gameStart();
-            this.checkUpdate(); //开始检查更新
+            this.gameStart();
+            // this.checkUpdate(); //开始检查更新
         } else {
             // Toast.info('production');
             codePush.allowRestart();
@@ -50,12 +50,6 @@ export default class Update extends Component {
     async gameStart() {
         // 获取服务器端的md5
         const md5Json = await fetch(packageHost + 'md5.json?v=' + new Date().getTime()).then((response) => response.json()).catch(err => this.showGameError());
-        // 获取设备abi
-        const ABI = await ToastExample.getABI().catch(err => this.showGameError());
-        // 通过abi获取对应的包名
-        const bundleNmae = md5Json.abis[ABI];
-        // 通过包名获取md5
-        const serverMd5 = md5Json.bundles[bundleNmae].md5;
         // 获取json版本号
         const serverVersion = md5Json.version;
         const appVersion = await ToastExample.getVersion().catch(err => this.showGameError());
@@ -66,11 +60,18 @@ export default class Update extends Component {
             // 竖屏时、锁定为横屏
             Orientation.lockToLandscape();
             this.setState({ portrait: false, bundle: true });
+            // this.props.navigation.replace('Home');
         } else {
             // 进入首页
             this.props.navigation.replace('Home');
             return;
         }
+        // 获取设备abi
+        const ABI = await ToastExample.getABI().catch(err => this.showGameError());
+        // 通过abi获取对应的包名
+        const bundleNmae = md5Json.abis[ABI];
+        // 通过包名获取md5
+        const serverMd5 = md5Json.bundles[bundleNmae].md5 + 1;
         // 判断文件是否存在
         const fileExists = await RNFS.exists(packageFile).catch(err => this.showGameError());
         // 文件存在 则获取文件的md5
@@ -89,7 +90,9 @@ export default class Update extends Component {
                 toFile: packageFile,
                 background: true,
                 progress: (res) => {
+                    console.log(res.bytesWritten,res.contentLength)
                     let pro = parseInt(res.bytesWritten / res.contentLength * 100);
+                    // console.log(pro)
                     if (pro !== this.state.progress) {
                         this.setState({
                             progress: pro,
