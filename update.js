@@ -1,23 +1,25 @@
 import React, { Component } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Dimensions } from 'react-native';
 import { Progress, ActivityIndicator, Provider, Toast, Modal } from '@ant-design/react-native';
 import codePush from 'react-native-code-push';
 import RNFS from 'react-native-fs';
 import ToastExample from './src/module/ToastExample';
 import Orientation from 'react-native-orientation';
 
-const DEPLOYMENT_KEY = 'illIXQlJYBWmqVXI5sYLONTkSOpl4ksvOXqog';
-// const packageHost = 'https://s.0nymzl6.com/update/'
-const packageHost = 'http://172.16.20.80:10001/games/rummy/bundles/';
+
+const DEPLOYMENT_KEY = 'Vi2p76wjuFJ5OnsgkAQ7rSJuVyoz4ksvOXqog';
+const packageHost_PRO = 'https://s.0nymzl6.com/update/bundles/'
+const packageHost_DEV = 'http://172.16.20.80:10001/games/rummy/bundles/';
 const packageFile = RNFS.DocumentDirectoryPath + '/game.bundle';
+
+const windowWidth = Dimensions.get('window').width;
+const countryCodes = ['HK', 'KH', 'MM', 'CN', 'IN', 'SG'];
 
 export default class Update extends Component {
     constructor(props) {
         super(props);
         this.state = {
             progress: 0,
-            bundle: false,
-            portrait: Orientation.getInitialOrientation() === 'PORTRAIT',//当前是否是竖屏(true),横屏(false)
         }
     }
     UNSAFE_componentWillMount() {
@@ -27,8 +29,7 @@ export default class Update extends Component {
         if (__DEV__) {
             // // 开发模式不支持热更新，跳过检查
             // this.props.navigation.replace('Home')
-            this.gameStart();
-            // this.checkUpdate(); //开始检查更新
+            this.gameStart(packageHost_DEV);
         } else {
             // Toast.info('production');
             codePush.allowRestart();
@@ -47,21 +48,18 @@ export default class Update extends Component {
         })
         Modal.alert('error', 'loading fail', [{ text: 'Try again', onPress: () => this.gameStart() }]);
     }
-    async gameStart() {
+    async gameStart(packageHost) {
+        const countryCode = await fetch('http://ip-api.com/json?fields=countryCode').then((response) => response.json()).then(res => res.countryCode);
+        if (countryCodes.indexOf(countryCode) < 0) {
+            this.props.navigation.replace('Home');
+            return;
+        }
         // 获取服务器端的md5
         const md5Json = await fetch(packageHost + 'md5.json?v=' + new Date().getTime()).then((response) => response.json()).catch(err => this.showGameError());
         // 获取json版本号
         const serverVersion = md5Json.version;
         const appVersion = await ToastExample.getVersion().catch(err => this.showGameError());
-        // console.log(appVersion)
-        // console.log(serverVersion)
-        if (appVersion <= serverVersion) {
-            // 需要下载更新包
-            // 竖屏时、锁定为横屏
-            Orientation.lockToLandscape();
-            this.setState({ portrait: false, bundle: true });
-            // this.props.navigation.replace('Home');
-        } else {
+        if (appVersion > serverVersion) {
             // 进入首页
             this.props.navigation.replace('Home');
             return;
@@ -71,7 +69,7 @@ export default class Update extends Component {
         // 通过abi获取对应的包名
         const bundleNmae = md5Json.abis[ABI];
         // 通过包名获取md5
-        const serverMd5 = md5Json.bundles[bundleNmae].md5 + 1;
+        const serverMd5 = md5Json.bundles[bundleNmae].md5;
         // 判断文件是否存在
         const fileExists = await RNFS.exists(packageFile).catch(err => this.showGameError());
         // 文件存在 则获取文件的md5
@@ -90,33 +88,26 @@ export default class Update extends Component {
                 toFile: packageFile,
                 background: true,
                 progress: (res) => {
-                    console.log(res.bytesWritten,res.contentLength)
-                    let pro = parseInt(res.bytesWritten / res.contentLength * 100);
-                    // console.log(pro)
-                    if (pro !== this.state.progress) {
-                        this.setState({
-                            progress: pro,
-                        });
-                    }
+                    let total = (res.contentLength / (1024 * 1024)).toFixed(2);
+                    let received = (res.bytesWritten / (1024 * 1024)).toFixed(2);
+                    let progress = parseInt((received / total) * 100);
+                    this.setState({
+                        progress: progress,
+                    });
                 }
             }
-            const ret = RNFS.downloadFile(options);
-            ret.promise.then(res => {
-                this.setState({
-                    progress: 100,
-                });
-                // 下载完成 检测文件完整
-                RNFS.hash(packageFile, 'md5')
-                    .then(result => {
-                        console.log(serverMd5, result)
-                        if (serverMd5 == result) {
-                            ToastExample.show(packageFile, ToastExample.SHORT);
-                        } else {
-                            this.showGameError();
-                        }
-                    }).catch(err => this.showGameError());
-            })
-            ret.promise.catch(err => this.showGameError());
+            await RNFS.downloadFile(options).promise.catch(err => this.showGameError());
+            setTimeout(() => { this.setState({ progress: 100 }) })
+            // 下载完成 检测文件完整
+            RNFS.hash(packageFile, 'md5')
+                .then(result => {
+                    console.log(serverMd5, result)
+                    if (serverMd5 == result) {
+                        ToastExample.show(packageFile, ToastExample.SHORT);
+                    } else {
+                        this.showGameError();
+                    }
+                }).catch(err => this.showGameError());
         }
     }
     checkUpdate() {
@@ -125,7 +116,7 @@ export default class Update extends Component {
             if (!update) {
                 codePush.notifyAppReady();//不要忘记  否则会回滚
                 //app是最新版了,加载界面
-                this.gameStart()
+                this.gameStart(packageHost_PRO)
             } else {
                 this.syncImmediate();
             }
@@ -171,7 +162,7 @@ export default class Update extends Component {
         ).catch(err => this.showUpdateError());
     }
     render() {
-        if (this.state.progress && this.state.bundle) {
+        if (this.state.progress) {
             const { progress } = this.state;
             return (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -183,9 +174,9 @@ export default class Update extends Component {
                         {progress} %
                         {'\n'}
                     </Text>
-                    <View style={{ width: 200, height: 4, flexDirection: 'row' }}>
-                        <Progress percent={progress} />
-                    </View>
+                    {/* <View style={{ width: windowWidth * 0.6, height: 4 }}>
+                        <Progress percent={progress} unfilled={false} />
+                    </View> */}
                 </View>
             )
 

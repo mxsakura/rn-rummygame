@@ -12,16 +12,16 @@ const Stack = createStackNavigator();
 class App extends Component {
   constructor(props) {
     super(props);
-    const adjustConfig = new AdjustConfig(
-      'k1ocmqx4zke8',
-      AdjustConfig.EnvironmentSandbox,
-    );
-    Adjust.create(adjustConfig);
+    // const adjustConfig = new AdjustConfig(
+    //   'k1ocmqx4zke8',
+    //   AdjustConfig.EnvironmentSandbox,
+    // );
+    // Adjust.create(adjustConfig);
   }
 
-  componentWillUnmount() {
-    Adjust.componentWillUnmount();
-  }
+  // componentWillUnmount() {
+  //   Adjust.componentWillUnmount();
+  // }
 
   render() {
     return (
