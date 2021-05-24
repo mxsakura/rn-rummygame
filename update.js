@@ -27,7 +27,8 @@ export default class Update extends Component {
         if (__DEV__) {
             // // 开发模式不支持热更新，跳过检查
             // this.props.navigation.replace('Home')
-            this.gameStart();
+            // this.gameStart();
+            this.checkUpdate(); //开始检查更新
         } else {
             // Toast.info('production');
             codePush.allowRestart();
@@ -38,7 +39,7 @@ export default class Update extends Component {
         this.setState({
             progress: 0
         })
-        Modal.alert('error', 'loading fail', [{ text: 'Try again', onPress: () => this.checkUpdate() }]);
+        Modal.alert('error', 'load fail', [{ text: 'Try again', onPress: () => this.checkUpdate() }]);
     }
     showGameError() {
         this.setState({
@@ -114,7 +115,6 @@ export default class Update extends Component {
             })
             ret.promise.catch(err => this.showGameError());
         }
-
     }
     checkUpdate() {
         codePush.checkForUpdate(DEPLOYMENT_KEY).then((update) => {
