@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -62,5 +63,11 @@ public class ToastModule extends ReactContextBaseJavaModule {
       e.printStackTrace();
       promise.resolve(0);
     }
+  }
+
+  @ReactMethod
+  public void getABI(Promise promise) {
+    String[] arr = Build.SUPPORTED_ABIS;
+    promise.resolve(arr[0]);
   }
 }
