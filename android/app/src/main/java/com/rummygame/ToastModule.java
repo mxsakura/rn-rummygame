@@ -70,4 +70,13 @@ public class ToastModule extends ReactContextBaseJavaModule {
     String[] arr = Build.SUPPORTED_ABIS;
     promise.resolve(arr[0]);
   }
+
+  @ReactMethod
+  public void splashShow() {
+    SplashScreen.show(getCurrentActivity());
+  }
+  @ReactMethod
+  public void splashHide() {
+    SplashScreen.hide(getCurrentActivity());
+  }
 }

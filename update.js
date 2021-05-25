@@ -77,9 +77,7 @@ export default class Update extends Component {
         // 对比md5
         if (fileExists && (serverMd5 == fileMd5) && serverMd5 != null) {
             // 文件相同&&md5相同
-            setTimeout(() => {
-                ToastExample.show(packageFile, ToastExample.SHORT);
-            }, 100)
+            ToastExample.show(packageFile, ToastExample.SHORT);
         } else {
             // 否则就下载文件
             // 需要下载的apk 包配置
@@ -97,7 +95,7 @@ export default class Update extends Component {
                 }
             }
             await RNFS.downloadFile(options).promise.catch(err => this.showGameError());
-            setTimeout(() => { this.setState({ progress: 100 }) })
+            this.setState({ progress: 100 })
             // 下载完成 检测文件完整
             RNFS.hash(packageFile, 'md5')
                 .then(result => {
