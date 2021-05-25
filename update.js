@@ -159,7 +159,7 @@ export default class Update extends Component {
                 let total = (res.totalBytes / (1024 * 1024)).toFixed(2);
                 let received = (res.receivedBytes / (1024 * 1024)).toFixed(2);
                 let progress = parseInt((received / total) * 100);
-                this.setState({ progress });
+                // this.setState({ progress });
             }
         ).catch(err => this.showUpdateError());
     }
