@@ -1,7 +1,8 @@
-import React, {Component} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
-import {createStackNavigator} from '@react-navigation/stack';
-import {Adjust, AdjustConfig} from 'react-native-adjust';
+import React, { Component } from 'react';
+import { StatusBar } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { Adjust, AdjustConfig } from 'react-native-adjust';
 // page
 import Update from './update';
 import HomeScreen from './src/views/HomeScreen';
@@ -26,6 +27,11 @@ class App extends Component {
   render() {
     return (
       <NavigationContainer>
+        <StatusBar
+          backgroundColor='#ff0000'
+          translucent={true}
+          hidden={true}
+          animated={true} />
         <Stack.Navigator>
           <Stack.Screen
             name="Update"

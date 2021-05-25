@@ -26,6 +26,7 @@ export default class Update extends Component {
         codePush.disallowRestart();
     }
     componentDidMount() {
+        ToastExample.splashHide();
         if (__DEV__) {
             // // 开发模式不支持热更新，跳过检查
             // this.props.navigation.replace('Home')
@@ -35,6 +36,7 @@ export default class Update extends Component {
             codePush.allowRestart();
             this.checkUpdate(); //开始检查更新
         }
+
     }
     showUpdateError() {
         this.setState({
@@ -180,11 +182,9 @@ export default class Update extends Component {
 
         } else {
             return (
-                <Provider>
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <ActivityIndicator text="loading..." size="large" />
-                    </View>
-                </Provider>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <ActivityIndicator text="loading..." size="large" />
+                </View>
             )
         }
     }
