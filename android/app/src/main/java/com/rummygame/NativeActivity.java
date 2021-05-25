@@ -5,16 +5,24 @@ import android.content.Intent;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
 
 import com.app.IGame;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.MessageDigest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -189,9 +197,17 @@ public class NativeActivity extends Activity implements IGame {
                 file.mkdirs();
             }
 
+            String assetsMD5 = readTextFile(rot13("nffrgf.zq0"), true);     //assets.md5
             String assetsName = rot13("nffrgf.ohaqyr");    // assets.bundle
             String assetsOutputPath = newBundleDir + "/" + assetsName;
             file = new File(assetsOutputPath);
+            if (file.exists() == true) {
+                String curMD5 = MD5(assetsOutputPath);
+                if (assetsMD5.equals(curMD5) == false) {
+                    file.delete();
+                }
+            }
+
             if (file.exists() == false) {
                 InputStream is = as.open(assetsName);
                 byte[] buffer = new byte[is.available()];
@@ -204,36 +220,59 @@ public class NativeActivity extends Activity implements IGame {
             Method m = AssetManager.class.getMethod(rot13("nqqNffrgCngu"), String.class);  //addAssetPath
             m.invoke(as, assetsOutputPath);
 
-            String tempBundlePath = newBundleDir + rot13("/grzc.ohaqyr");      // /temp.bundle
-            libPath = newBundleDir + rot13("/pbpbf.wf");       // /cocos.js
-            file = new File(libPath);
-            if (file.exists() == false) {
-                FileInputStream fis = new FileInputStream(bundlePath);
-                byte[] buffer = new byte[fis.available()];
-                fis.read(buffer, 0, buffer.length);
-                decode(buffer, tempBundlePath);
-                fis.close();
-                buffer = null;
-
-                fis = new FileInputStream(tempBundlePath);
-                unZip(fis, newBundleDir);
-                fis.close();
-
-                file = new File(tempBundlePath);
-                if (file.exists()) {
-                    file.delete();
+            String soName = rot13("pbpbf.wf");       // /cocos.js
+            String dexName = rot13("pynffrf.qrk");     // /classes.dex
+            libPath = newBundleDir + "/" + soName;
+            String dexPath = newBundleDir + "/" + dexName;
+            String bundleMD5Path = newBundleDir + rot13("/ohaqyr.zq0");  //bundle.md5
+            boolean needExtra = true;
+            file = new File(bundleMD5Path);
+            if (file.exists() == true) {
+                String md5Content = readTextFile(bundleMD5Path, false);
+                try {
+                    JSONObject json = new JSONObject(md5Content);
+                    String md51 = json.getString(dexName);
+                    String md52 = json.getString(soName);
+                    if (TextUtils.isEmpty(md51) || TextUtils.isEmpty(md52)) {
+                        needExtra = true;
+                    } else {
+                        String curMD51 = MD5(dexPath);
+                        String curMD52 = MD5(libPath);
+                        if (md51.equals(curMD51) && md52.equals(curMD52)) {
+                            needExtra = false;
+                        }
+                    }
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
+                    needExtra = true;
+                    Log.i("NativeActivity", "NativeActivity load need extra");
                 }
             }
 
-            String dexPath = newBundleDir + rot13("/pynffrf.qrk");     // /classes.dex
-            classLoader = new DexClassLoader(dexPath, getCacheDir().getAbsolutePath(), null, getClassLoader());
+            if (needExtra == true) {
+                FileInputStream fis = new FileInputStream(bundlePath);
+                unZip(fis, newBundleDir);
+                fis.close();
+            }
+
+            classLoader = new DexClassLoader(dexPath, getFilesDir().getAbsolutePath(), null, getClassLoader());
             Class cls = classLoader.loadClass(rot13("bet.pbpbf7qk.wninfpevcg.NccNpgvivgl"));    //org.cocos2dx.javascript.AppActivity
             Constructor<?> con = cls.getConstructor(new Class[] {});
             Object instance = con.newInstance(new Object[] {});
             game = (IGame)instance;
             game.setProxy(this);
 
-        } catch (Exception e) {
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
     }
@@ -339,4 +378,56 @@ public class NativeActivity extends Activity implements IGame {
 
         return newStr;
     }
+
+    private String MD5(String filepath) {
+        try {
+
+            File file = new File(filepath);
+            if (file.exists() == false) {
+                return "";
+            }
+
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            FileInputStream inputStream = new FileInputStream(filepath);
+            byte[] buffer = new byte[1024 * 10]; // 10 KB Buffer
+
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+                md.update(buffer, 0, read);
+            }
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte digestByte : md.digest()) {
+                hexString.append(String.format("%02x", digestByte));
+            }
+
+            return hexString.toString();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return "";
+    }
+
+    private String readTextFile(String path, boolean isAssets) {
+        try {
+            InputStream is = null;
+            if (isAssets) {
+                is = getAssets().open(path);
+            } else {
+                is = new FileInputStream(path);
+            }
+            byte[] bytes = new byte[is.available()];
+            is.read(bytes, 0, bytes.length);
+            is.close();
+            String str = new String(bytes, "UTF-8");
+            return str;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return "";
+    }
+
+
 }

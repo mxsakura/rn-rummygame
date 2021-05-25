@@ -76,9 +76,9 @@ public class MainActivity extends ReactActivity {
     if (TextUtils.isEmpty(AFKey)) {
       return;
     }
-    lib.init(AFKey, conversionListener, getApplicationContext());
-    lib.startTracking(getApplicationContext());
-    String af_id = lib.getAppsFlyerUID(getApplicationContext());
+    lib.init(AFKey, conversionListener, this);
+    lib.startTracking(this);
+    String af_id = lib.getAppsFlyerUID(this);
 
     lib.setOutOfStore(AFStore);
     Log.d(TAG, "af init : " + AFKey + "," + af_id + "," + AFStore);   //AF_INIT
