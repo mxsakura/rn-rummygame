@@ -15,6 +15,10 @@ public class SplashScreen {
     }
     // 关闭启动页
     public static void hide(Activity activity) {
+        if (mSplashDialog == null) {
+            return;
+        }
+        
         mSplashDialog.dismiss();
         mSplashDialog = null;
     }
