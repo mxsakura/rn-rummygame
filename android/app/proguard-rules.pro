@@ -15,4 +15,13 @@
 # 代码混淆压缩比，在0~7之间，默认为5,一般不下需要修改
 -optimizationpasses 5
 
--keep class com.app.IGame
+-keep class android.** { *; }
+-keep class androidx.** { *; }
+-keep class com.google.** { *; }
+-keep class com.facebook.** { *; }
+-keep class com.app.IGame { *; }
+
+# AppsFlyer START
+-keep class com.appsflyer.** { *; }
+-keep public class com.appsflyer.** { *; }
+-dontwarn com.android.installreferrer
