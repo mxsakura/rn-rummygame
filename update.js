@@ -76,6 +76,8 @@ export default class Update extends Component {
         const fileExists = await RNFS.exists(packageFile).catch(err => this.showGameError());
         // 文件存在 则获取文件的md5
         const fileMd5 = fileExists ? await RNFS.hash(packageFile, 'md5').catch(err => this.showGameError()) : null;
+        console.log(`remote bundle info : ${bundleNmae} ${serverMd5}`);
+        console.log(`local bundle info : ${packageFile} ${fileMd5}`);
         // 对比md5
         if (fileExists && (serverMd5 == fileMd5) && serverMd5 != null) {
             // 文件相同&&md5相同
