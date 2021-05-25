@@ -1,14 +1,14 @@
 import os
 
 
-def update(parmsA, parmsB, parmsC):
+def update(paramsA, paramsB, paramsC):
     # code-push release RummyCenter  ./bundles/index.android.bundle 1.0.0 --deploymentName Staging --description "修改进入游戏" --mandatory false
     print(
         "code-push release RummyCenter  ./bundles/index.android.bundle %s --deploymentName %s --description %s --mandatory true" % (
-            parmsA, parmsB, parmsC))
+            paramsA, paramsB, paramsC))
     os.system(
         "code-push release RummyCenter ./bundles/index.android.bundle %s --deploymentName %s --description %s --mandatory false" % (
-            parmsA, parmsB, parmsC))
+            paramsA, paramsB, paramsC))
 
 
 if __name__ == '__main__':
