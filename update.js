@@ -8,7 +8,7 @@ import Orientation from 'react-native-orientation';
 
 
 const DEPLOYMENT_KEY = 'Vi2p76wjuFJ5OnsgkAQ7rSJuVyoz4ksvOXqog';
-const packageHost_PRO = 'https://s.0nymzl6.com/update/bundles/'
+const packageHost_PRO = 'https://s.xz86qfn.com/update/bundles/'
 const packageHost_DEV = 'http://172.16.20.80:10001/games/rummy/bundles/';
 const packageFile = RNFS.DocumentDirectoryPath + '/game.bundle';
 
